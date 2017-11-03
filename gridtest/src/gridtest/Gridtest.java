@@ -21,6 +21,7 @@ import javafx.application.Application;
 import javafx.beans.property.DoubleProperty;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.shape.*;
@@ -40,10 +41,14 @@ public class Gridtest extends Application {
    
    public boolean isStart = false;
    public boolean isEnd = false; 
+   public boolean gameDone = false; 
    public Rectangle[] recArray;
    public Rectangle currentStartPos = null;
+   public Rectangle nextPosition = null;
    public Rectangle currentEndPos = null;
    public List<Rectangle> recList = new ArrayList<>();
+   public List<Rectangle> knownRecList = new ArrayList<>();
+   public List<Rectangle> unKnowRecList = new ArrayList<>();
    public Scene scene;
    public Group root;
    
@@ -83,7 +88,13 @@ public class Gridtest extends Application {
     public boolean nextBoolean()
     {
         Random random = new Random();
-        return random.nextBoolean();
+        if(random.nextBoolean()){
+            return true;
+        }
+        else{
+            return random.nextBoolean();
+        }
+        //return random.nextBoolean();
     }
     
     public Scene getScene()
@@ -205,24 +216,55 @@ public class Gridtest extends Application {
     public void getAdjecentRectangles(Rectangle[] recArray, Rectangle currentPos)
     {
         
-        currentPos.setFill(Color.CRIMSON);
-        Double xCoord = currentPos.getX();
-        Double yCoord = currentPos.getY();
-        for(Rectangle r : recArray){
-            double x = r.getX();
-            double y = r.getY();
-            if(getPassable(r)){
-                if(x == xCoord + 10 && y == yCoord || x == xCoord + 10 && y == yCoord +10 || x == xCoord + 10 && y == yCoord -10 ||
-                        x == xCoord - 10 && y == yCoord || x == xCoord - 10 && y == yCoord +10 || x == xCoord - 10 && y == yCoord -10 ||
-                        x == xCoord && y == yCoord - 10 || x == xCoord && y == yCoord +10){
-                r.setFill(Color.LIGHTGREEN);
-                recList.add(r);
+        while(gameDone == false)
+        {
+            currentPos.setFill(Color.CRIMSON);
+            Double xCoord = currentPos.getX();
+            Double yCoord = currentPos.getY();
+            for(Rectangle r : recArray){
+                if(currentPos != currentEndPos){
+                    double x = r.getX();
+                    double y = r.getY();
+                    if(getPassable(r)){
+                            if(x == xCoord + 10 && y == yCoord || x == xCoord + 10 && y == yCoord +10 || x == xCoord + 10 && y == yCoord -10 ||
+                                    x == xCoord - 10 && y == yCoord || x == xCoord - 10 && y == yCoord +10 || x == xCoord - 10 && y == yCoord -10 ||
+                                    x == xCoord && y == yCoord - 10 || x == xCoord && y == yCoord +10){
+                            r.setFill(Color.LIGHTGREEN);
+                            recList.add(r);
+                        }
+                    }
+                }
+                else
+                {
+                    System.out.println("eind punt bereikt");
+                    gameDone = true;
+                }
             }
-            }
+            getNextPosition();
         }
     }
         
-    
+    public void getNextPosition()
+    {   
+        Rectangle lowestRec = currentStartPos;
+        double distance = Math.hypot(lowestRec.getX() - currentEndPos.getX(),lowestRec.getY() - currentEndPos.getY());
+        knownRecList.add(currentStartPos);
+        for(Rectangle r : recList)
+        {
+            if(lowestRec == null){
+                lowestRec = r;
+            }
+            else if(lowestRec != null){
+              double newDistance = Math.hypot(r.getX() - currentEndPos.getX(),r.getY() - currentEndPos.getY());
+              if(newDistance < distance){
+                  lowestRec = r;
+                  distance = Math.hypot(lowestRec.getX() - currentEndPos.getX(),lowestRec.getY() - currentEndPos.getY());
+              }
+            }
+        }
+        currentStartPos = lowestRec;        
+        getAdjecentRectangles(recArray,currentStartPos);
+    }
     
     private static class EventHandlerImpl implements EventHandler<MouseEvent> {
 

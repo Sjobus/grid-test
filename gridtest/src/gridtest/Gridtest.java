@@ -5,6 +5,7 @@
  */
 package gridtest;
 
+import static com.sun.javafx.geom.Curve.next;
 import java.awt.Font;
 import java.awt.Graphics;
 import javafx.scene.input.*;
@@ -36,83 +37,122 @@ import javafx.stage.Stage;
 public class Gridtest extends Application {
    
    public boolean isStart = false;
-   public boolean isEnd = false;
+   public boolean isEnd = false;   
    public Rectangle currentStartPos = null;
    public Rectangle currentEndPos = null;
+   public Scene scene;
+   public Group root;
+   
    @Override
    public void start(Stage stage)
    {
+       scene = getScene();
+        Button button = new Button("new grid");
+        button.setOnAction((ActionEvent e) -> {
+           scene = null;
+           scene = getScene();
+           root.getChildren().add(button);
+           stage.setScene(scene);
+        });
+        button.setLayoutX(800);
+        button.setLayoutY(125);
+        root.getChildren().add(button);
+       stage.setTitle("test");
+       stage.setScene(scene);
+       stage.setResizable(false);
+       stage.setHeight(scene.getHeight());
+       stage.setWidth(scene.getWidth());
+       stage.show();
+   }
+
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        Application.launch(args);
+    } 
+    
+    public boolean nextBoolean()
+    {
+        Random random = new Random();
+        return random.nextBoolean();
+    }
+    
+    public Scene getScene()
+    {
        int x = 0;
        int y = 0;
        int i;
-       
-       Rectangle[] recArray = new Rectangle[150];
-       Random random;    
-       Group root = new Group();
+       MyRectangle myRec;
+       Rectangle[] recArray = new Rectangle[3750];
+       MyRectangle[] myRecArray = new MyRectangle[3750];           
+       root = new Group();
        Scene scene = new Scene(root,1250,530, Color.WHITE);//was 750
-       //Text text = new Text (10,40, "hellow world!");
-       Button button = new Button("klick me!");
+       //Text text = new Text (10,40, "hellow world!");       
        
-       for(i = 0; i < 150; i++)
+       for(i = 0; i < 3750; i++)
        {         
-                Rectangle r = new Rectangle(x,y,50,50);
-                r.setFill(Color.TRANSPARENT);
-                r.setStroke(Color.DIMGREY);
-                r.setStrokeWidth(3);
-                r.setOnMouseClicked(new EventHandler<MouseEvent>() {
-                    @Override
-                    public void handle(MouseEvent event) {
-                        if(isStart && !isEnd){
-                            if(currentStartPos == null)
-                            {
-                                currentStartPos = r;
-                                r.setFill(Color.CHARTREUSE);
-                            }
-                            else
-                            {
-                                currentStartPos.setFill(Color.TRANSPARENT);
-                                currentStartPos = r;
-                                currentStartPos.setFill(Color.CHARTREUSE);
-                            }                            
-                            
-                        }
-                        else if(isEnd && !isStart)
+           if(x == 0 || x == 740)
+           {
+               myRec = new MyRectangle(x,y,10, true);                  
+           } 
+           else{
+               myRec = new MyRectangle(x,y,10, nextBoolean());
+           }
+           
+                Rectangle r = myRec.getRectangle();  
+                r.setOnMouseClicked((MouseEvent event) -> {
+                    if(isStart && !isEnd){
+                        if(currentStartPos == null)
                         {
-                           if(currentEndPos == null)
-                            {
-                                currentEndPos = r;
-                                r.setFill(Color.CORNFLOWERBLUE);
-                            }
-                            else
-                            {
-                                currentEndPos.setFill(Color.TRANSPARENT);
-                                currentEndPos = r;
-                                currentEndPos.setFill(Color.CORNFLOWERBLUE);
-                            }
+                            currentStartPos = r;
+                            r.setFill(Color.CHARTREUSE);
                         }
                         else
                         {
-                          r.setFill(Color.BLACK);  
-                        }                            
-                    }                    
-                });                
+                            currentStartPos.setFill(Color.TRANSPARENT);
+                            currentStartPos = r;
+                            currentStartPos.setFill(Color.CHARTREUSE);
+                        }
+                        
+                    }
+                    else if(isEnd && !isStart)
+                    {
+                        if(currentEndPos == null)
+                        {
+                            currentEndPos = r;
+                            r.setFill(Color.CORNFLOWERBLUE);
+                        }
+                        else
+                        {
+                            currentEndPos.setFill(Color.TRANSPARENT);
+                            currentEndPos = r;
+                            currentEndPos.setFill(Color.CORNFLOWERBLUE);                    
+                        }
+                    }
+                    else
+                    {
+                       System.out.println("Blok passable is:" + getPassable(r));
+                    }
+                });
+                myRecArray[i] = myRec;                
                 recArray[i] = r; 
-                if(x >= 700)
+                if(x >= 740)
                 {
                     x = 0;
-                    y += 50;
+                    y += 10;
                 }
                 else
                 {
-                 x += 50;
+                 x += 10;
                 }
                 
        }
        root.getChildren().addAll(recArray);
        Text uiAKnop = new Text(800, 50,"Druk op 'A' om een start positie te kiezen aan of uit te zetten");
        Text uiDKnop = new Text(800, 75,"Druk op 'D' om een eind positie te kiezen aan of uit te zetten");
-       Text uiKnop = new Text(800, 100,"klik om een blokade te plaatsen");
-       root.getChildren().addAll(uiAKnop,uiDKnop,uiKnop);
+       
+       root.getChildren().addAll(uiAKnop,uiDKnop);
        scene.setOnKeyPressed(new EventHandler<KeyEvent>(){
                    @Override
                    public void handle(KeyEvent e){
@@ -127,25 +167,19 @@ public class Gridtest extends Application {
                        }                      
                     }
                 });
-       
-       stage.setTitle("test");
-       stage.setScene(scene);
-       stage.setResizable(false);
-       stage.setHeight(scene.getHeight());
-       stage.setWidth(scene.getWidth());
-       stage.show();
-       
-       
-   }
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        Application.launch(args);
-    } 
+       return scene;
+    }
     
-
+    public boolean getPassable(Rectangle r){
+        if(r.getFill() == Color.BLACK){
+            return false;
+        }
+        else
+            return true;
+    }
+    
+        
+    
     
     private static class EventHandlerImpl implements EventHandler<MouseEvent> {
 

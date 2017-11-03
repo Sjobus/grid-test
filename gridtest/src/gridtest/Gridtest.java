@@ -14,9 +14,11 @@ import java.awt.PointerInfo;
 //import java.awt.event.MouseEvent;
 
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import javafx.application.Application;
+import javafx.beans.property.DoubleProperty;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
@@ -37,9 +39,11 @@ import javafx.stage.Stage;
 public class Gridtest extends Application {
    
    public boolean isStart = false;
-   public boolean isEnd = false;   
+   public boolean isEnd = false; 
+   public Rectangle[] recArray;
    public Rectangle currentStartPos = null;
    public Rectangle currentEndPos = null;
+   public List<Rectangle> recList = new ArrayList<>();
    public Scene scene;
    public Group root;
    
@@ -47,16 +51,20 @@ public class Gridtest extends Application {
    public void start(Stage stage)
    {
        scene = getScene();
-        Button button = new Button("new grid");
-        button.setOnAction((ActionEvent e) -> {
+        Button newGridbutton = new Button("new grid");
+        newGridbutton.setOnAction((ActionEvent e) -> {
            scene = null;
+           currentStartPos = null;
+           currentEndPos = null;
+           recList = new ArrayList<>();
            scene = getScene();
-           root.getChildren().add(button);
+           root.getChildren().add(newGridbutton);
            stage.setScene(scene);
+           
         });
-        button.setLayoutX(800);
-        button.setLayoutY(125);
-        root.getChildren().add(button);
+        newGridbutton.setLayoutX(800);
+        newGridbutton.setLayoutY(125);
+        root.getChildren().add(newGridbutton);
        stage.setTitle("test");
        stage.setScene(scene);
        stage.setResizable(false);
@@ -84,10 +92,9 @@ public class Gridtest extends Application {
        int y = 0;
        int i;
        MyRectangle myRec;
-       Rectangle[] recArray = new Rectangle[3750];
-       MyRectangle[] myRecArray = new MyRectangle[3750];           
+       recArray = new Rectangle[3750];                  
        root = new Group();
-       Scene scene = new Scene(root,1250,530, Color.WHITE);//was 750
+       scene = new Scene(root,1250,530, Color.WHITE);//was 750
        //Text text = new Text (10,40, "hellow world!");       
        
        for(i = 0; i < 3750; i++)
@@ -114,6 +121,9 @@ public class Gridtest extends Application {
                             currentStartPos = r;
                             currentStartPos.setFill(Color.CHARTREUSE);
                         }
+                        if(currentStartPos == currentEndPos){
+                            currentEndPos = null;
+                        }
                         
                     }
                     else if(isEnd && !isStart)
@@ -129,13 +139,15 @@ public class Gridtest extends Application {
                             currentEndPos = r;
                             currentEndPos.setFill(Color.CORNFLOWERBLUE);                    
                         }
+                        if( currentEndPos == currentStartPos){
+                            currentStartPos = null;
+                        }
                     }
                     else
                     {
                        System.out.println("Blok passable is:" + getPassable(r));
                     }
-                });
-                myRecArray[i] = myRec;                
+                });                                
                 recArray[i] = r; 
                 if(x >= 740)
                 {
@@ -149,10 +161,22 @@ public class Gridtest extends Application {
                 
        }
        root.getChildren().addAll(recArray);
+       
        Text uiAKnop = new Text(800, 50,"Druk op 'A' om een start positie te kiezen aan of uit te zetten");
        Text uiDKnop = new Text(800, 75,"Druk op 'D' om een eind positie te kiezen aan of uit te zetten");
        
-       root.getChildren().addAll(uiAKnop,uiDKnop);
+       Button findAdButton = new Button("start");
+        findAdButton.setOnAction((ActionEvent e) -> { 
+            if(currentStartPos != null && currentEndPos != null)
+                getAdjecentRectangles(recArray,currentStartPos);
+            else
+                System.out.println("Kies Start en Eind positie");
+        });
+        findAdButton.setLayoutX(950);
+        findAdButton.setLayoutY(125);
+        
+       
+       root.getChildren().addAll(uiAKnop,uiDKnop,findAdButton);
        scene.setOnKeyPressed(new EventHandler<KeyEvent>(){
                    @Override
                    public void handle(KeyEvent e){
@@ -178,6 +202,25 @@ public class Gridtest extends Application {
             return true;
     }
     
+    public void getAdjecentRectangles(Rectangle[] recArray, Rectangle currentPos)
+    {
+        
+        currentPos.setFill(Color.CRIMSON);
+        Double xCoord = currentPos.getX();
+        Double yCoord = currentPos.getY();
+        for(Rectangle r : recArray){
+            double x = r.getX();
+            double y = r.getY();
+            if(getPassable(r)){
+                if(x == xCoord + 10 && y == yCoord || x == xCoord + 10 && y == yCoord +10 || x == xCoord + 10 && y == yCoord -10 ||
+                        x == xCoord - 10 && y == yCoord || x == xCoord - 10 && y == yCoord +10 || x == xCoord - 10 && y == yCoord -10 ||
+                        x == xCoord && y == yCoord - 10 || x == xCoord && y == yCoord +10){
+                r.setFill(Color.LIGHTGREEN);
+                recList.add(r);
+            }
+            }
+        }
+    }
         
     
     
